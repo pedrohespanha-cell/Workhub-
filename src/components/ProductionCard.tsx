@@ -15,7 +15,7 @@ export const ProductionCard: React.FC<ProductionCardProps> = ({ p, prodSettings,
   const isRumoured = p.status === 'Rumoured';
 
   const lxRate = getCurrentRate(p.tier, 'Lighting Technician');
-  const rigRate = getCurrentRate(p.tier, 'Rigging LX');
+  const rigRate = getCurrentRate(p.tier, 'Rigging Lighting Technician');
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border dark:border-slate-800 shadow-sm hover:shadow-xl transition-all flex flex-col overflow-hidden relative group cursor-pointer" onClick={onClick}>
@@ -27,19 +27,25 @@ export const ProductionCard: React.FC<ProductionCardProps> = ({ p, prodSettings,
         <h3 className={`font-black text-xl leading-tight mb-2 group-hover:text-brand-500 transition-colors ${isRumoured ? 'text-slate-500' : ''}`}>{p.name.replace('WRAPPED - ', '').replace('RUMOURED - ', '')}</h3>
         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 bg-slate-50 dark:bg-slate-950 inline-block px-2 py-1 rounded-lg border dark:border-slate-800 self-start">{p.dates || 'Dates TBA'}</p>
 
+        {p.address && (
+          <a href={`https://maps.google.com/?q=${encodeURIComponent(p.address)}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} className="text-[10px] font-bold text-slate-500 hover:text-brand-500 transition-colors mb-4 flex items-start gap-1">
+            <Icons.MapPin /> <span className="truncate">{p.address}</span>
+          </a>
+        )}
+
         <div className="space-y-2 mt-auto">
           {(lxRate || rigRate) && (
             <div className="pt-2 mb-4 border-t dark:border-slate-800 space-y-1">
               {lxRate && (
                 <div className="flex justify-between items-center text-[9px]">
-                  <span className="text-slate-400 font-black uppercase">Shooting LX</span>
-                  <span className="font-bold text-emerald-500">${lxRate.toFixed(2)}/hr</span>
+                  <span className="text-slate-400 font-black uppercase">Lighting Tech (LX)</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">${lxRate.toFixed(2)}/hr</span>
                 </div>
               )}
               {rigRate && (
                 <div className="flex justify-between items-center text-[9px]">
-                  <span className="text-slate-400 font-black uppercase">Rigging LX</span>
-                  <span className="font-bold text-emerald-500">${rigRate.toFixed(2)}/hr</span>
+                  <span className="text-slate-400 font-black uppercase">Rigging Lighting Tech</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">${rigRate.toFixed(2)}/hr</span>
                 </div>
               )}
             </div>
@@ -47,17 +53,23 @@ export const ProductionCard: React.FC<ProductionCardProps> = ({ p, prodSettings,
           <div>
             <div className="flex justify-between items-center mb-0.5">
               <p className="text-[9px] text-slate-400 font-black uppercase">{prodSettings.role1}</p>
-              {prodSettings.showRates && getCurrentRate(p.tier, prodSettings.role1) && <span className="text-[9px] font-black text-emerald-500">${getCurrentRate(p.tier, prodSettings.role1)}/hr</span>}
             </div>
             <p className="text-sm font-bold truncate">{p.crew?.[prodSettings.role1] || '—'}</p>
           </div>
           <div>
             <div className="flex justify-between items-center mb-0.5">
               <p className="text-[9px] text-slate-400 font-black uppercase">{prodSettings.role2}</p>
-              {prodSettings.showRates && getCurrentRate(p.tier, prodSettings.role2) && <span className="text-[9px] font-black text-emerald-500">${getCurrentRate(p.tier, prodSettings.role2)}/hr</span>}
             </div>
             <p className="text-sm font-bold truncate">{p.crew?.[prodSettings.role2] || '—'}</p>
           </div>
+          {(prodSettings.additionalRoles || []).map(role => (
+            <div key={role}>
+              <div className="flex justify-between items-center mb-0.5">
+                <p className="text-[9px] text-slate-400 font-black uppercase">{role}</p>
+              </div>
+              <p className="text-sm font-bold truncate">{p.crew?.[role] || '—'}</p>
+            </div>
+          ))}
         </div>
       </div>
 

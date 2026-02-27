@@ -24,7 +24,7 @@ import { StatGrid } from './components/StatGrid';
 import { EntryForm } from './components/EntryForm';
 import { WeeklyCard } from './components/WeeklyCard';
 import { ProductionCard } from './components/ProductionCard';
-import { PayModal, ProdSettingsModal, DashSettingsModal, WipeModal, ViewingProdModal } from './components/Modals';
+import { PayModal, ProdSettingsModal, DashSettingsModal, WipeModal, ViewingProdModal, GlobalSettingsModal } from './components/Modals';
 
 const App: React.FC = () => {
   // Firebase State
@@ -37,7 +37,8 @@ const App: React.FC = () => {
   // App State
   const [entries, setEntries] = useState<Entry[]>([]);
   const [productions, setProductions] = useState<Production[]>([]);
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [theme, setTheme] = useState<'dark' | 'light'>((localStorage.getItem('pt_theme') as 'dark' | 'light') || 'dark');
+  const [themeColor, setThemeColor] = useState(localStorage.getItem('pt_theme_color') || 'default');
   const [mainMode, setMainMode] = useState<'timesheets' | 'productions' | 'reports'>('timesheets');
   const [prodTab, setProdTab] = useState<'dashboard' | 'import'>('dashboard');
   
@@ -54,21 +55,36 @@ const App: React.FC = () => {
   const [prodSort, setProdSort] = useState({ key: 'startDate', dir: 'asc' }); 
   const [prodViewMode, setProdViewMode] = useState<'card' | 'list'>('card'); 
   const [isProdSettingsOpen, setIsProdSettingsOpen] = useState(false);
-  const [prodSettings, setProdSettings] = useState<ProdSettings>({ role1: 'Gaffer', role2: 'Rigging Gaffer', showRates: true });
+  const [prodSettings, setProdSettings] = useState<ProdSettings>({ role1: 'Lighting Technician', role2: 'Rigging Lighting Technician', additionalRoles: [] });
   
   // Log Tab States
   const [globalFilter, setGlobalFilter] = useState('All'); 
-  const [formData, setFormData] = useState<Entry>({ id: 0, date: new Date().toISOString().split('T')[0], show: '', position: 'Rigging LX', startTime: '07:00', endTime: '19:00', notes: '', gross: '', net: '', minPayType: '12hr', saveDefault: true, hours: 0, payableHours: 0 });
+  const [formData, setFormData] = useState<Entry>({ id: 0, date: new Date().toISOString().split('T')[0], show: '', position: 'Lighting Technician', startTime: '07:00', endTime: '19:00', notes: '', gross: '', net: '', minPayType: 'unknown', saveDefault: true, hours: 0, payableHours: 0 });
   const [isEditingEntry, setIsEditingEntry] = useState(false);
   const [scratchpadText, setScratchpadText] = useState('');
   const [statusMsg, setStatusMsg] = useState('');
   const [history, setHistory] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastChange, setLastChange] = useState(localStorage.getItem('pt_last_change') || 'Never');
+  const [lastBackupLoad, setLastBackupLoad] = useState(localStorage.getItem('pt_last_backup') || 'Never');
+
+  const updateLastChange = () => {
+    const now = new Date().toLocaleString();
+    setLastChange(now);
+    localStorage.setItem('pt_last_change', now);
+  };
+
+  const updateLastBackup = () => {
+    const now = new Date().toLocaleString();
+    setLastBackupLoad(now);
+    localStorage.setItem('pt_last_backup', now);
+  };
 
   const saveToHistory = (newEntries: Entry[], newProds: Production[] = productions) => {
     setHistory(prev => [...prev.slice(-9), { entries, productions }]);
     setEntries(newEntries);
     setProductions(newProds);
+    updateLastChange();
   };
 
   const handleUndo = () => {
@@ -82,6 +98,9 @@ const App: React.FC = () => {
 
   const [dashSettings, setDashSettings] = useState<DashSettings>(DEFAULT_DASH_SETTINGS);
   const [isDashSettingsOpen, setIsDashSettingsOpen] = useState(false);
+  const [reportSettings, setReportSettings] = useState<DashSettings>(DEFAULT_DASH_SETTINGS);
+  const [isReportSettingsOpen, setIsReportSettingsOpen] = useState(false);
+  const [isBackupMenuOpen, setIsBackupMenuOpen] = useState(false);
 
   // --- INITIALIZATION ---
   useEffect(() => {
@@ -90,6 +109,9 @@ const App: React.FC = () => {
     
     const savedDashSettings = localStorage.getItem('pt_dash_settings');
     if (savedDashSettings) setDashSettings({ ...DEFAULT_DASH_SETTINGS, ...JSON.parse(savedDashSettings) });
+
+    const savedReportSettings = localStorage.getItem('pt_report_settings');
+    if (savedReportSettings) setReportSettings({ ...DEFAULT_DASH_SETTINGS, ...JSON.parse(savedReportSettings) });
 
     const savedTimes = JSON.parse(localStorage.getItem('pt_last_times') || '{"start":"07:00", "end":"19:00"}');
     setFormData(prev => ({ ...prev, startTime: savedTimes.start, endTime: savedTimes.end }));
@@ -171,7 +193,13 @@ const App: React.FC = () => {
   useEffect(() => {
     if (theme === 'dark') document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
+    localStorage.setItem('pt_theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', themeColor);
+    localStorage.setItem('pt_theme_color', themeColor);
+  }, [themeColor]);
 
   function showStatus(msg: string) {
     setStatusMsg(msg);
@@ -223,6 +251,7 @@ const App: React.FC = () => {
     const parsed = parseHTMLText(scratchpadText);
     saveProductions(parsed);
     setScratchpadText('');
+    updateLastBackup();
     showStatus(`Successfully parsed ${parsed.length} productions!`);
     setProdTab('dashboard');
   };
@@ -233,6 +262,7 @@ const App: React.FC = () => {
     try {
       const parsed = await parsePDFFile(file);
       saveProductions(parsed);
+      updateLastBackup();
       showStatus(`Successfully parsed ${parsed.length} productions!`);
       setProdTab('dashboard');
     } catch (err) {
@@ -253,6 +283,7 @@ const App: React.FC = () => {
       if (htmlMatch) {
         const parsed = parseHTMLText(htmlMatch[0]);
         saveProductions(parsed);
+        updateLastBackup();
         showStatus(`Imported ${parsed.length} shows!`);
         setProdTab('dashboard');
       } else {
@@ -297,24 +328,43 @@ const App: React.FC = () => {
       if (globalFilter === 'Year') return d.getFullYear() === now.getFullYear();
       if (globalFilter === 'Month') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
       if (globalFilter === 'Week') return getISOWeek(d) === getISOWeek(now) && d.getFullYear() === now.getFullYear();
-      return true;
+      if (globalFilter === 'Pending') return !e.gross && !e.net;
+      return e.show === globalFilter;
     });
   }, [entries, globalFilter]);
 
   const stats = useMemo(() => {
-    let g = 0, n = 0, actualH = 0, payableH = 0;
+    let g = 0, n = 0, actualH = 0, payableH = 0, expectedStraightPay = 0, expectedPayablePay = 0;
+    let missingGuarantees: string[] = [];
     const weekShowCombos: Record<string, { hasPay: boolean }> = {};
     const daysSet = new Set();
     const showsSet = new Set();
+    let latestDate = 0;
     
     filteredEntries.forEach(e => {
       g += parseFloat(e.gross as string) || 0;
       n += parseFloat(e.net as string) || 0;
       actualH += e.hours || 0; 
       payableH += e.payableHours || 0;
+
+      const prod = productions.find(p => p.name === e.show);
+      if (prod && prod.tier) {
+        const rate = getCurrentRate(prod.tier, e.position);
+        if (rate) {
+          expectedStraightPay += (e.hours || 0) * rate;
+          expectedPayablePay += (e.payableHours || 0) * rate;
+        }
+      }
+
+      if (e.minPayType === 'unknown' || !e.minPayType) {
+        missingGuarantees.push(`${e.date} (${e.show})`);
+      }
       daysSet.add(e.date);
       if (e.show) showsSet.add(e.show);
       
+      const eTime = new Date(e.date).getTime();
+      if (eTime > latestDate) latestDate = eTime;
+
       const wsKey = `${getWeekKey(e.date)}_${e.show}`;
       if (!weekShowCombos[wsKey]) weekShowCombos[wsKey] = { hasPay: false };
       if (e.gross || e.net) weekShowCombos[wsKey].hasPay = true;
@@ -324,11 +374,22 @@ const App: React.FC = () => {
     const weeksSet = new Set(filteredEntries.map(e => getWeekKey(e.date)));
     const monthsSet = new Set(filteredEntries.map(e => e.date.substring(0, 7)));
 
+    let daysSinceLastLog = -1;
+    if (latestDate > 0) {
+      const diff = new Date().getTime() - latestDate;
+      daysSinceLastLog = Math.floor(diff / (1000 * 3600 * 24));
+    }
+
     return { 
       gross: g, 
       net: n, 
       actualHours: actualH, 
       payableHours: payableH,
+      expectedStraightPay,
+      expectedPayablePay,
+      hasMissingGuarantee: missingGuarantees.length > 0,
+      missingGuarantees,
+      daysSinceLastLog,
       days: daysSet.size,
       shows: showsSet.size,
       weeksWorked: weeksSet.size,
@@ -338,18 +399,28 @@ const App: React.FC = () => {
       avgG: actualH ? g / actualH : 0, 
       avgN: actualH ? n / actualH : 0 
     };
-  }, [filteredEntries]);
+  }, [filteredEntries, productions]);
 
   const monthlyReports = useMemo(() => {
     const months: Record<string, any> = {};
     entries.forEach(e => {
       const mKey = e.date.substring(0, 7);
-      if (!months[mKey]) months[mKey] = { g: 0, n: 0, actualH: 0, payableH: 0, shows: new Set(), days: new Set(), weekShows: {} };
+      if (!months[mKey]) months[mKey] = { g: 0, n: 0, actualH: 0, payableH: 0, expectedStraightPay: 0, expectedPayablePay: 0, shows: new Set(), days: new Set(), weekShows: {} };
       
       months[mKey].g += parseFloat(e.gross as string) || 0;
       months[mKey].n += parseFloat(e.net as string) || 0;
       months[mKey].actualH += e.hours || 0;
       months[mKey].payableH += e.payableHours || 0;
+
+      const prod = productions.find(p => p.name === e.show);
+      if (prod && prod.tier) {
+        const rate = getCurrentRate(prod.tier, e.position);
+        if (rate) {
+          months[mKey].expectedStraightPay += (e.hours || 0) * rate;
+          months[mKey].expectedPayablePay += (e.payableHours || 0) * rate;
+        }
+      }
+
       months[mKey].days.add(e.date);
       if (e.show) months[mKey].shows.add(e.show);
 
@@ -362,14 +433,14 @@ const App: React.FC = () => {
       const pending = Object.values(d.weekShows).filter((c: any) => !c.hasPay).length;
       return [m, { ...d, pending }];
     }).sort((a, b) => b[0].localeCompare(a[0]));
-  }, [entries]);
+  }, [entries, productions]);
 
   const weeklyGroups = useMemo(() => {
     const groups: Record<string, any> = {};
     filteredEntries.forEach(e => {
       const wKey = getWeekKey(e.date);
-      if (!groups[wKey]) groups[wKey] = { shows: {}, th: 0, tph: 0, tg: 0, tn: 0, days: new Set(), sNames: new Set() };
-      if (!groups[wKey].shows[e.show]) groups[wKey].shows[e.show] = { entries: [], g: 0, n: 0, actualH: 0, payableH: 0 };
+      if (!groups[wKey]) groups[wKey] = { shows: {}, th: 0, tph: 0, tg: 0, tn: 0, expectedStraightPay: 0, expectedPayablePay: 0, days: new Set(), sNames: new Set(), missingGuarantees: [] };
+      if (!groups[wKey].shows[e.show]) groups[wKey].shows[e.show] = { entries: [], g: 0, n: 0, actualH: 0, payableH: 0, expectedStraightPay: 0, expectedPayablePay: 0 };
       
       groups[wKey].shows[e.show].entries.push(e);
       groups[wKey].shows[e.show].g += parseFloat(e.gross as string) || 0;
@@ -381,11 +452,34 @@ const App: React.FC = () => {
       groups[wKey].tph += e.payableHours || 0;
       groups[wKey].tg += parseFloat(e.gross as string) || 0;
       groups[wKey].tn += parseFloat(e.net as string) || 0;
+
+      const prod = productions.find(p => p.name === e.show);
+      if (prod && prod.tier) {
+        const rate = getCurrentRate(prod.tier, e.position);
+        if (rate) {
+          const straight = (e.hours || 0) * rate;
+          const payable = (e.payableHours || 0) * rate;
+          groups[wKey].shows[e.show].expectedStraightPay += straight;
+          groups[wKey].shows[e.show].expectedPayablePay += payable;
+          groups[wKey].expectedStraightPay += straight;
+          groups[wKey].expectedPayablePay += payable;
+        }
+      }
+
       groups[wKey].days.add(e.date);
       if (e.show) groups[wKey].sNames.add(e.show);
+      
+      if (e.minPayType === 'unknown' || !e.minPayType) {
+        groups[wKey].missingGuarantees.push(`${e.date} (${e.show})`);
+      }
     });
+
+    Object.values(groups).forEach(g => {
+      g.hasMissingGuarantee = g.missingGuarantees.length > 0;
+    });
+
     return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]));
-  }, [filteredEntries]);
+  }, [filteredEntries, productions]);
 
   const handleProdSort = (key: string) => {
     setProdSort(prev => ({ key, dir: prev.key === key && prev.dir === 'asc' ? 'desc' : 'asc' }));
@@ -562,6 +656,12 @@ const App: React.FC = () => {
     localStorage.setItem('pt_dash_settings', JSON.stringify(newSet));
   };
 
+  const toggleReportSetting = (k: string) => {
+    const newSet = { ...reportSettings, [k]: !(reportSettings as any)[k] };
+    setReportSettings(newSet);
+    localStorage.setItem('pt_report_settings', JSON.stringify(newSet));
+  };
+
   const SortIcon = ({ col }: { col: string }) => {
     if (prodSort.key !== col) return <span className="opacity-0 group-hover:opacity-30 ml-1"><Icons.ArrowDown /></span>;
     return <span className="text-brand-500 ml-1">{prodSort.dir === 'asc' ? <Icons.ArrowUp /> : <Icons.ArrowDown />}</span>;
@@ -624,20 +724,30 @@ const App: React.FC = () => {
 
             <div className="lg:col-span-8 space-y-6 pb-24">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2">
-                <div className="flex gap-2 overflow-x-auto no-scrollbar w-full sm:w-auto">
-                  {['All', 'Year', 'Month', 'Week'].map(f => (
-                    <button key={f} onClick={() => setGlobalFilter(f)} className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all shrink-0 ${globalFilter === f ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 border-transparent shadow-sm' : 'border-slate-300 dark:border-slate-700 text-slate-500'}`}>{f === 'All' ? 'All Time' : `This ${f}`}</button>
+                <div className="flex gap-2 overflow-x-auto no-scrollbar w-full sm:w-auto items-center">
+                  {['All', 'Year', 'Month', 'Week', 'Pending'].map(f => (
+                    <button key={f} onClick={() => setGlobalFilter(f)} className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all shrink-0 ${globalFilter === f ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 border-transparent shadow-sm' : 'border-slate-300 dark:border-slate-700 text-slate-500'}`}>{f === 'All' ? 'All Time' : f === 'Pending' ? 'Pending Pay' : `This ${f}`}</button>
                   ))}
+                  <div className="relative group">
+                    <button className={`p-2 rounded-full border transition-all shrink-0 ${!['All', 'Year', 'Month', 'Week', 'Pending'].includes(globalFilter) ? 'bg-brand-500 text-white border-brand-500 shadow-sm' : 'border-slate-300 dark:border-slate-700 text-slate-500 bg-slate-50 dark:bg-slate-950'}`}>
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                    </button>
+                    <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-slate-900 border dark:border-slate-800 rounded-2xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden flex flex-col max-h-64 overflow-y-auto">
+                      {allShowsList.map(s => (
+                        <button key={s} onClick={() => setGlobalFilter(s)} className={`text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${globalFilter === s ? 'text-brand-500 bg-brand-50 dark:bg-brand-500/10' : 'text-slate-600 dark:text-slate-400'}`}>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex gap-2 shrink-0 items-center">
-                  <label className="cursor-pointer px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors flex items-center gap-2">
-                    Import
-                    <input type="file" className="hidden" accept=".csv" onChange={handleCSVUpload} />
-                  </label>
-                  <button onClick={handleCSVExport} className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-brand-500/10 text-brand-600 dark:text-brand-400 hover:bg-brand-500/20 transition-colors flex items-center gap-2">
-                    Export
-                  </button>
-                  <button onClick={() => setIsDashSettingsOpen(true)} className="p-2 bg-slate-50 dark:bg-slate-950 border dark:border-slate-800 rounded-xl text-slate-500 hover:text-brand-500 transition-colors shrink-0 ml-2"><Icons.Settings /></button>
+                <div className="flex flex-col items-end gap-1 relative">
+                  <div className="flex gap-2 shrink-0 items-center">
+                    <button onClick={() => setIsBackupMenuOpen(true)} className="p-2 bg-slate-50 dark:bg-slate-950 border dark:border-slate-800 rounded-xl text-slate-500 hover:text-brand-500 transition-colors shrink-0">
+                      <Icons.Backup />
+                    </button>
+                    <button onClick={() => setIsDashSettingsOpen(true)} className="p-2 bg-slate-50 dark:bg-slate-950 border dark:border-slate-800 rounded-xl text-slate-500 hover:text-brand-500 transition-colors shrink-0 ml-2"><Icons.Settings /></button>
+                  </div>
                 </div>
               </div>
 
@@ -654,7 +764,7 @@ const App: React.FC = () => {
                     isExpanded={expandedWeeks[wKey]}
                     toggleExpanded={() => setExpandedWeeks(p => ({ ...p, [wKey]: !p[wKey] }))}
                     dashSettings={dashSettings}
-                    onEdit={(e) => { setFormData({ ...e, saveDefault: true }); setIsEditingEntry(true); setIsMobileFormOpen(true); }}
+                    onEdit={(e) => { setFormData({ ...e, minPayType: e.minPayType || 'unknown', saveDefault: true }); setIsEditingEntry(true); setIsMobileFormOpen(true); }}
                     onDelete={handleTsDelete}
                     onApplyPay={(wk, sn, g, n) => setPayModal({ isOpen: true, weekKey: wk, showName: sn, gross: g, net: n })}
                   />
@@ -748,11 +858,9 @@ const App: React.FC = () => {
                                 <td className="p-4 text-xs font-bold text-slate-500">{dates.end.getFullYear() < 2100 ? dates.end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'TBA'}</td>
                                 <td className="p-4 text-sm">
                                   {p.crew?.[prodSettings.role1] || '—'}
-                                  {prodSettings.showRates && getCurrentRate(p.tier, prodSettings.role1) && <span className="text-[9px] font-black text-emerald-500 ml-2">${getCurrentRate(p.tier, prodSettings.role1)}</span>}
                                 </td>
                                 <td className="p-4 text-sm">
                                   {p.crew?.[prodSettings.role2] || '—'}
-                                  {prodSettings.showRates && getCurrentRate(p.tier, prodSettings.role2) && <span className="text-[9px] font-black text-emerald-500 ml-2">${getCurrentRate(p.tier, prodSettings.role2)}</span>}
                                 </td>
                                 <td className="p-4">
                                   <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded border dark:border-slate-700 ${p.status === 'Rumoured' ? 'text-slate-400' : mapTierToStandard(p.tier).includes('Feature') ? 'text-purple-600 dark:text-purple-400' : 'text-brand-600 dark:text-brand-400'}`}>{mapTierToStandard(p.tier)}</span>
@@ -808,7 +916,7 @@ const App: React.FC = () => {
                 <div className="flex justify-between items-center mb-8">
                   <h2 className="text-3xl font-black tracking-tight flex items-center gap-3"><Icons.Chart /> Monthly Efficiency</h2>
                   <div className="flex items-center gap-2">
-                    <button onClick={() => setIsDashSettingsOpen(true)} className="p-2 bg-white dark:bg-slate-900 border dark:border-slate-800 shadow-sm rounded-xl text-slate-500 hover:text-brand-500 transition-colors shrink-0"><Icons.Settings /></button>
+                    <button onClick={() => setIsReportSettingsOpen(true)} className="p-2 bg-white dark:bg-slate-900 border dark:border-slate-800 shadow-sm rounded-xl text-slate-500 hover:text-brand-500 transition-colors shrink-0"><Icons.Settings /></button>
                     <button onClick={() => setWipeModal('entries')} className="text-[9px] uppercase font-black tracking-widest text-rose-500 bg-rose-500/10 px-3 py-2 rounded-lg flex items-center gap-1"><Icons.Wipe /> Wipe Logs</button>
                   </div>
                 </div>
@@ -820,12 +928,20 @@ const App: React.FC = () => {
                       </div>
                       
                       <div className="flex-1 mb-6">
-                        <StatGrid sourceData={d} dashSettings={dashSettings} />
+                        <StatGrid sourceData={d} dashSettings={reportSettings} />
                       </div>
                       
                       <div className="pt-4 border-t dark:border-slate-800">
                         <div className="flex flex-wrap gap-2">
-                          {[...d.shows].map(s => <span key={s} className="text-[9px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-1 rounded-md">{s}</span>)}
+                          {[...d.shows].map(s => (
+                            <button 
+                              key={s} 
+                              onClick={() => { setGlobalFilter(s); setMainMode('timesheets'); }}
+                              className="text-[9px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 px-2 py-1 rounded-md transition-colors cursor-pointer"
+                            >
+                              {s}
+                            </button>
+                          ))}
                         </div>
                       </div>
                     </div>
@@ -858,6 +974,26 @@ const App: React.FC = () => {
         onClose={() => setIsDashSettingsOpen(false)} 
         dashSettings={dashSettings} 
         toggleDashSetting={toggleDashSetting} 
+      />
+      <DashSettingsModal 
+        isOpen={isReportSettingsOpen} 
+        onClose={() => setIsReportSettingsOpen(false)} 
+        dashSettings={reportSettings} 
+        toggleDashSetting={toggleReportSetting} 
+        title="Report Settings"
+      />
+      <GlobalSettingsModal
+        isOpen={isBackupMenuOpen}
+        onClose={() => setIsBackupMenuOpen(false)}
+        theme={theme}
+        setTheme={setTheme}
+        themeColor={themeColor}
+        setThemeColor={setThemeColor}
+        handleCSVUpload={handleCSVUpload}
+        handleCSVExport={handleCSVExport}
+        setWipeModal={setWipeModal}
+        lastChange={lastChange}
+        lastBackupLoad={lastBackupLoad}
       />
       <WipeModal 
         wipeModal={wipeModal} 

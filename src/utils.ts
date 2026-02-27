@@ -18,10 +18,23 @@ export function calculateHours(start: string, end: string) {
 }
 
 export function calculateOT(act: number, type: string) {
-  if (!act || type === 'unknown') return act || 0;
-  let earned = act <= 8 ? act : act <= 12 ? 8 + (act - 8) * 1.5 : act <= 14 ? 8 + 6 + (act - 12) * 2 : 8 + 6 + 4 + (act - 14) * 3;
-  const min = type === '8hr' ? 8 : type === '10hr' ? 11 : type === '12hr' ? 14 : 0;
-  return Math.max(earned, min);
+  let payable = 0;
+  
+  if (act <= 8) {
+    payable = act;
+  } else if (act <= 12) {
+    payable = 8 + (act - 8) * 1.5;
+  } else if (act <= 14) {
+    payable = 14 + (act - 12) * 2;
+  } else {
+    payable = 18 + (act - 14) * 3;
+  }
+
+  if (type === '8hr') return Math.max(8, payable);
+  if (type === '10hr') return Math.max(11, payable); // 8 + 2*1.5 = 11
+  if (type === '12hr') return Math.max(14, payable); // 8 + 4*1.5 = 14
+  
+  return payable; // unknown or no minimum
 }
 
 export function formatCurr(n: number | string) {
@@ -62,15 +75,21 @@ export function parseCSVLine(text: string) {
 }
 
 export function mapTierToStandard(rawTier: string) {
-  if (!rawTier) return "Standard Television";
+  if (!rawTier) return "Feature Films & Large-Scale Television";
   const t = rawTier.toLowerCase();
+  
   if (t.includes('rumoured')) return "Rumoured";
-  if (t.includes('premium') || t.includes('hbsvod tier 1')) return "Premium Network & SVOD";
-  if (t.includes('mid-tier') || t.includes('hbsvod tier 2')) return "Mid-Tier Network & SVOD";
-  if (t.includes('entry') || t.includes('hbsvod tier 3')) return "Entry-Tier Network & SVOD";
-  if (t.includes('feature')) return t.includes('low budget') ? "Low Budget Feature Films" : "Feature Films";
-  if (t.includes('new episodic')) return "New Episodic Series";
-  return "Standard Television"; 
+  
+  if (t.includes('feature') || t.includes('tier 1') || t.includes('tier a') || t.includes('large-scale')) return "Feature Films & Large-Scale Television";
+  if (t.includes('network') || t.includes('mid-range') || t.includes('tier 2') || t.includes('tier b') || t.includes('pilot')) return "Network & HB SVOD Pilots / Mid-Range Series";
+  if (t.includes('home video') || t.includes('cable long form') || t.includes('tier 3') || t.includes('tier c') || t.includes('lower tier')) return "Home Video, Cable Long Form, & Lower Tier HB SVOD";
+  
+  if (t.includes('1st season')) return "Syndicated & Cable TV Series (1st Season)";
+  if (t.includes('2nd season')) return "Syndicated & Cable TV Series (2nd Season)";
+  if (t.includes('3rd season')) return "Syndicated & Cable TV Series (3rd Season)";
+  
+  // Default fallback
+  return "Feature Films & Large-Scale Television"; 
 }
 
 export function getCurrentRate(tier: string, roleName: string) {

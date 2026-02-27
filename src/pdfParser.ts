@@ -60,8 +60,13 @@ export const parsePDFFile = async (file: File): Promise<Production[]> => {
       });
     }
 
-    const addrMatch = block.match(/\d+\s+[A-Za-z0-9\s,]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Way|Drive|Dr|Lane|Ln|Court|Ct|Circle|Cir|Plaza|Plz|Square|Sq|Trail|Trl|Parkway|Pkwy|Mews|Crescent|Cres|Place|Pl|Gardens|Gdns|Row|Walk|Terrace|Ter|Close|Cl|Grove|Grv|View|Vw|Rise|Rse|Common|Cmn|Way|Wy|Gate|Gt|Link|Lnk|Loop|Lp|Path|Pth|Track|Trk|Trail|Trl|Highway|Hwy|Expressway|Expy|Freeway|Fwy|Turnpike|Tpk|Tollway|Tly|Bypass|Byp|Park|Pk|Avenue|Ave|Boulevard|Blvd|Circle|Cir|Court|Ct|Drive|Dr|Lane|Ln|Place|Pl|Road|Rd|Square|Sq|Street|St|Terrace|Ter|Way|Wy|Crescent|Cres|Mews|Row|Walk|Close|Cl|Grove|Grv|View|Vw|Rise|Rse|Common|Cmn|Gate|Gt|Link|Lnk|Loop|Lp|Path|Pth|Track|Trk|Trail|Trl|Highway|Hwy|Expressway|Expy|Freeway|Fwy|Turnpike|Tpk|Tollway|Tly|Bypass|Byp|Park|Pk)\.?\s*,?\s*[A-Za-z\s,]+,\s*[A-Z]{2}\s+[A-Z0-9\s]+/i);
-    if (addrMatch) address = addrMatch[0].trim();
+    const addrMatch = block.match(/\d+\s+[A-Za-z0-9\s,.-]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Way|Drive|Dr|Lane|Ln|Court|Ct|Circle|Cir|Plaza|Plz|Square|Sq|Parkway|Pkwy|Crescent|Cres|Place|Pl|Terrace|Ter|Grove|Grv)\.?\s*,?\s*[A-Za-z\s,.-]+,\s*[A-Z]{2}\s+[A-Z0-9\s]+/i);
+    if (addrMatch) {
+      address = addrMatch[0].trim();
+    } else {
+      const fallbackMatch = block.match(/\d+\s+[A-Za-z0-9\s,.-]+,\s*[A-Za-z\s,.-]+,\s*[A-Z]{2}\s+[A-Z0-9\s]+/i);
+      if (fallbackMatch) address = fallbackMatch[0].trim();
+    }
 
     for(let j=0; j<linesAfterEmail.length; j++) {
       const line = linesAfterEmail[j];

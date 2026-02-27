@@ -2,17 +2,16 @@ import React from 'react';
 import { WagePeriod, DashSettings } from './types';
 
 export const WAGE_PERIODS: WagePeriod[] = [
-  { start: "2023-04-02", end: "2024-03-30", idx: 0 },
-  { start: "2024-03-31", end: "2025-03-29", idx: 1 },
-  { start: "2025-03-30", end: "2026-03-28", idx: 2 },
-  { start: "2026-03-29", end: "2027-04-03", idx: 3 },
-  { start: "2027-04-04", end: "2028-03-31", idx: 4 }
+  { start: "2024-04-01", end: "2025-03-30", idx: 0 },
+  { start: "2025-03-31", end: "2026-03-29", idx: 1 },
+  { start: "2026-03-30", end: "2027-04-04", idx: 2 },
+  { start: "2027-04-05", end: "2028-03-31", idx: 3 }
 ];
 
 export const POSITIONS = [
   "Gaffer", "Rigging Gaffer", "Best Boy", "Best Boy Rigging", 
-  "Lighting Technician", "Rigging LX", "Key Grip", "Key Rigging Grip", 
-  "Best Boy Grip", "Grip", "Second Rigging Grip", "Rigging Grip"
+  "Lighting Technician", "Electrician", "Rigging Lighting Technician", "Rigging Electrician",
+  "Key Grip", "Key Rigging Grip", "Best Boy Grip", "Grip", "Second Rigging Grip", "Rigging Grip"
 ];
 
 export const MAP_POS: Record<string, string> = {
@@ -21,7 +20,9 @@ export const MAP_POS: Record<string, string> = {
   "Best Boy": "Second Lighting Technician",
   "Best Boy Rigging": "Second Rigging Lighting Technician",
   "Lighting Technician": "Lighting Technician",
-  "Rigging LX": "Rigging Lighting Technician",
+  "Electrician": "Lighting Technician",
+  "Rigging Lighting Technician": "Rigging Lighting Technician",
+  "Rigging Electrician": "Rigging Lighting Technician",
   "Key Grip": "Key Grip",
   "Key Rigging Grip": "Key Rigging Grip",
   "Best Boy Grip": "Assistant Key Grip (Best Boy)",
@@ -31,103 +32,89 @@ export const MAP_POS: Record<string, string> = {
 };
 
 export const WAGES: Record<string, Record<string, number[]>> = {
-  "Feature Films": {
-    "Head Lighting Technician (incl. Lighting Board Operator)": [53.05, 55.70, 57.93, 59.96, 61.76],
-    "Second Lighting Technician": [48.25, 50.66, 52.69, 54.53, 56.17],
-    "Lighting Technician": [46.26, 48.57, 50.51, 52.28, 53.85],
-    "Head Rigging Lighting Technician": [48.25, 50.66, 52.69, 54.53, 56.17],
-    "Second Rigging Lighting Technician": [46.26, 48.57, 50.51, 52.28, 53.85],
-    "Rigging Lighting Technician": [43.00, 45.15, 46.96, 48.60, 50.06],
-    "Key Grip": [53.05, 55.70, 57.93, 59.96, 61.76],
-    "Assistant Key Grip (Best Boy)": [48.25, 50.66, 52.69, 54.53, 56.17],
-    "Grip": [46.26, 48.57, 50.51, 52.28, 53.85],
-    "Key Rigging Grip": [48.25, 50.66, 52.69, 54.53, 56.17],
-    "Second Rigging Grip": [46.26, 48.57, 50.51, 52.28, 53.85],
-    "Rigging Grip": [43.00, 45.15, 46.96, 48.60, 50.06]
+  "Feature Films & Large-Scale Television": {
+    "Head Lighting Technician (incl. Lighting Board Operator)": [48.85, 50.80, 52.58, 54.16],
+    "Head Rigging Lighting Technician": [48.85, 50.80, 52.58, 54.16],
+    "Second Lighting Technician": [41.55, 43.21, 44.72, 46.06],
+    "Second Rigging Lighting Technician": [41.55, 43.21, 44.72, 46.06],
+    "Lighting Technician": [34.67, 36.06, 37.32, 38.44],
+    "Rigging Lighting Technician": [34.67, 36.06, 37.32, 38.44],
+    "Key Grip": [48.85, 50.80, 52.58, 54.16],
+    "Key Rigging Grip": [48.85, 50.80, 52.58, 54.16],
+    "Assistant Key Grip (Best Boy)": [41.55, 43.21, 44.72, 46.06],
+    "Grip": [34.67, 36.06, 37.32, 38.44],
+    "Second Rigging Grip": [34.67, 36.06, 37.32, 38.44],
+    "Rigging Grip": [34.67, 36.06, 37.32, 38.44]
   },
-  "Low Budget Feature Films": {
-    "Head Lighting Technician (incl. Lighting Board Operator)": [47.74, 50.13, 52.14, 53.96, 55.58],
-    "Second Lighting Technician": [43.43, 45.60, 47.42, 49.08, 50.55],
-    "Lighting Technician": [41.63, 43.71, 45.46, 47.05, 48.47],
-    "Head Rigging Lighting Technician": [43.43, 45.60, 47.42, 49.08, 50.55],
-    "Second Rigging Lighting Technician": [41.63, 43.71, 45.46, 47.05, 48.47],
-    "Rigging Lighting Technician": [38.70, 40.64, 42.26, 43.74, 45.05],
-    "Key Grip": [47.74, 50.13, 52.14, 53.96, 55.58],
-    "Assistant Key Grip (Best Boy)": [43.43, 45.60, 47.42, 49.08, 50.55],
-    "Grip": [41.63, 43.71, 45.46, 47.05, 48.47],
-    "Key Rigging Grip": [43.43, 45.60, 47.42, 49.08, 50.55],
-    "Second Rigging Grip": [41.63, 43.71, 45.46, 47.05, 48.47],
-    "Rigging Grip": [38.70, 40.64, 42.26, 43.74, 45.05]
+  "Network & HB SVOD Pilots / Mid-Range Series": {
+    "Head Lighting Technician (incl. Lighting Board Operator)": [46.41, 48.27, 49.96, 51.46],
+    "Head Rigging Lighting Technician": [46.41, 48.27, 49.96, 51.46],
+    "Second Lighting Technician": [39.47, 41.05, 42.49, 43.76],
+    "Second Rigging Lighting Technician": [39.47, 41.05, 42.49, 43.76],
+    "Lighting Technician": [32.93, 34.25, 35.45, 36.51],
+    "Rigging Lighting Technician": [32.93, 34.25, 35.45, 36.51],
+    "Key Grip": [46.41, 48.27, 49.96, 51.46],
+    "Key Rigging Grip": [46.41, 48.27, 49.96, 51.46],
+    "Assistant Key Grip (Best Boy)": [39.47, 41.05, 42.49, 43.76],
+    "Grip": [32.93, 34.25, 35.45, 36.51],
+    "Second Rigging Grip": [32.93, 34.25, 35.45, 36.51],
+    "Rigging Grip": [32.93, 34.25, 35.45, 36.51]
   },
-  "Standard Television": {
-    "Head Lighting Technician (incl. Lighting Board Operator)": [46.68, 49.95, 51.95, 53.77, 55.38],
-    "Second Lighting Technician": [42.48, 45.45, 47.27, 48.92, 50.39],
-    "Lighting Technician": [38.86, 41.58, 43.24, 44.75, 46.09],
-    "Head Rigging Lighting Technician": [42.48, 45.45, 47.27, 48.92, 50.39],
-    "Second Rigging Lighting Technician": [38.86, 41.58, 43.24, 44.75, 46.09],
-    "Rigging Lighting Technician": [36.12, 38.65, 40.20, 41.61, 42.86],
-    "Key Grip": [46.68, 49.95, 51.95, 53.77, 55.38],
-    "Assistant Key Grip (Best Boy)": [42.48, 45.45, 47.27, 48.92, 50.39],
-    "Grip": [38.86, 41.58, 43.24, 44.75, 46.09],
-    "Key Rigging Grip": [42.48, 45.45, 47.27, 48.92, 50.39],
-    "Second Rigging Grip": [38.86, 41.58, 43.24, 44.75, 46.09],
-    "Rigging Grip": [36.12, 38.65, 40.20, 41.61, 42.86]
+  "Home Video, Cable Long Form, & Lower Tier HB SVOD": {
+    "Head Lighting Technician (incl. Lighting Board Operator)": [43.97, 45.73, 47.33, 48.75],
+    "Head Rigging Lighting Technician": [43.97, 45.73, 47.33, 48.75],
+    "Second Lighting Technician": [37.40, 38.90, 40.26, 41.47],
+    "Second Rigging Lighting Technician": [37.40, 38.90, 40.26, 41.47],
+    "Lighting Technician": [31.20, 32.45, 33.59, 34.60],
+    "Rigging Lighting Technician": [31.20, 32.45, 33.59, 34.60],
+    "Key Grip": [43.97, 45.73, 47.33, 48.75],
+    "Key Rigging Grip": [43.97, 45.73, 47.33, 48.75],
+    "Assistant Key Grip (Best Boy)": [37.40, 38.90, 40.26, 41.47],
+    "Grip": [31.20, 32.45, 33.59, 34.60],
+    "Second Rigging Grip": [31.20, 32.45, 33.59, 34.60],
+    "Rigging Grip": [31.20, 32.45, 33.59, 34.60]
   },
-  "Premium Network & SVOD": {
-    "Head Lighting Technician (incl. Lighting Board Operator)": [51.12, 53.68, 55.83, 57.78, 59.51],
-    "Second Lighting Technician": [46.52, 48.85, 50.80, 52.58, 54.16],
-    "Lighting Technician": [42.56, 44.68, 46.47, 48.10, 49.54],
-    "Head Rigging Lighting Technician": [46.52, 48.85, 50.80, 52.58, 54.16],
-    "Second Rigging Lighting Technician": [42.56, 44.68, 46.47, 48.10, 49.54],
-    "Rigging Lighting Technician": [39.56, 41.54, 43.20, 44.71, 46.06],
-    "Key Grip": [51.12, 53.68, 55.83, 57.78, 59.51],
-    "Assistant Key Grip (Best Boy)": [46.52, 48.85, 50.80, 52.58, 54.16],
-    "Grip": [42.56, 44.68, 46.47, 48.10, 49.54],
-    "Key Rigging Grip": [46.52, 48.85, 50.80, 52.58, 54.16],
-    "Second Rigging Grip": [42.56, 44.68, 46.47, 48.10, 49.54],
-    "Rigging Grip": [39.56, 41.54, 43.20, 44.71, 46.06]
+  "Syndicated & Cable TV Series (1st Season)": {
+    "Head Lighting Technician (incl. Lighting Board Operator)": [43.97, 45.73, 47.33, 48.75],
+    "Head Rigging Lighting Technician": [43.97, 45.73, 47.33, 48.75],
+    "Second Lighting Technician": [37.40, 38.90, 40.26, 41.47],
+    "Second Rigging Lighting Technician": [37.40, 38.90, 40.26, 41.47],
+    "Lighting Technician": [31.20, 32.45, 33.59, 34.60],
+    "Rigging Lighting Technician": [31.20, 32.45, 33.59, 34.60],
+    "Key Grip": [43.97, 45.73, 47.33, 48.75],
+    "Key Rigging Grip": [43.97, 45.73, 47.33, 48.75],
+    "Assistant Key Grip (Best Boy)": [37.40, 38.90, 40.26, 41.47],
+    "Grip": [31.20, 32.45, 33.59, 34.60],
+    "Second Rigging Grip": [31.20, 32.45, 33.59, 34.60],
+    "Rigging Grip": [31.20, 32.45, 33.59, 34.60]
   },
-  "Mid-Tier Network & SVOD": {
-    "Head Lighting Technician (incl. Lighting Board Operator)": [48.90, 51.35, 53.40, 55.27, 56.93],
-    "Second Lighting Technician": [44.49, 46.71, 48.58, 50.28, 51.79],
-    "Lighting Technician": [40.71, 42.74, 44.45, 46.01, 47.39],
-    "Head Rigging Lighting Technician": [44.49, 46.71, 48.58, 50.28, 51.79],
-    "Second Rigging Lighting Technician": [40.71, 42.74, 44.45, 46.01, 47.39],
-    "Rigging Lighting Technician": [37.84, 39.73, 41.32, 42.77, 44.05],
-    "Key Grip": [48.90, 51.35, 53.40, 55.27, 56.93],
-    "Assistant Key Grip (Best Boy)": [44.49, 46.71, 48.58, 50.28, 51.79],
-    "Grip": [40.71, 42.74, 44.45, 46.01, 47.39],
-    "Key Rigging Grip": [44.49, 46.71, 48.58, 50.28, 51.79],
-    "Second Rigging Grip": [40.71, 42.74, 44.45, 46.01, 47.39],
-    "Rigging Grip": [37.84, 39.73, 41.32, 42.77, 44.05]
+  "Syndicated & Cable TV Series (2nd Season)": {
+    "Head Lighting Technician (incl. Lighting Board Operator)": [44.40, 46.18, 47.79, 49.22],
+    "Head Rigging Lighting Technician": [44.40, 46.18, 47.79, 49.22],
+    "Second Lighting Technician": [37.77, 39.28, 40.65, 41.87],
+    "Second Rigging Lighting Technician": [37.77, 39.28, 40.65, 41.87],
+    "Lighting Technician": [31.51, 32.77, 33.92, 34.94],
+    "Rigging Lighting Technician": [31.51, 32.77, 33.92, 34.94],
+    "Key Grip": [44.40, 46.18, 47.79, 49.22],
+    "Key Rigging Grip": [44.40, 46.18, 47.79, 49.22],
+    "Assistant Key Grip (Best Boy)": [37.77, 39.28, 40.65, 41.87],
+    "Grip": [31.51, 32.77, 33.92, 34.94],
+    "Second Rigging Grip": [31.51, 32.77, 33.92, 34.94],
+    "Rigging Grip": [31.51, 32.77, 33.92, 34.94]
   },
-  "Entry-Tier Network & SVOD": {
-    "Head Lighting Technician (incl. Lighting Board Operator)": [46.68, 49.01, 50.97, 52.75, 54.33],
-    "Second Lighting Technician": [42.48, 44.60, 46.38, 48.00, 49.44],
-    "Lighting Technician": [38.86, 40.80, 42.43, 43.92, 45.24],
-    "Head Rigging Lighting Technician": [42.48, 44.60, 46.38, 48.00, 49.44],
-    "Second Rigging Lighting Technician": [38.86, 40.80, 42.43, 43.92, 45.24],
-    "Rigging Lighting Technician": [36.12, 37.93, 39.45, 40.83, 42.05],
-    "Key Grip": [46.68, 49.01, 50.97, 52.75, 54.33],
-    "Assistant Key Grip (Best Boy)": [42.48, 44.60, 46.38, 48.00, 49.44],
-    "Grip": [38.86, 40.80, 42.43, 43.92, 45.24],
-    "Key Rigging Grip": [42.48, 44.60, 46.38, 48.00, 49.44],
-    "Second Rigging Grip": [38.86, 40.80, 42.43, 43.92, 45.24],
-    "Rigging Grip": [36.12, 37.93, 39.45, 40.83, 42.05]
-  },
-  "New Episodic Series": {
-    "Head Lighting Technician (incl. Lighting Board Operator)": [46.68, 46.96, 49.59, 52.12, 54.34],
-    "Second Lighting Technician": [42.48, 42.73, 45.12, 47.42, 49.44],
-    "Lighting Technician": [38.86, 39.10, 41.29, 43.39, 45.23],
-    "Head Rigging Lighting Technician": [42.48, 42.73, 45.12, 47.42, 49.44],
-    "Second Rigging Lighting Technician": [38.86, 39.10, 41.29, 43.39, 45.23],
-    "Rigging Lighting Technician": [36.12, 36.35, 38.39, 40.34, 42.05],
-    "Key Grip": [46.68, 46.96, 49.59, 52.12, 54.34],
-    "Assistant Key Grip (Best Boy)": [42.48, 42.73, 45.12, 47.42, 49.44],
-    "Grip": [38.86, 39.10, 41.29, 43.39, 45.23],
-    "Key Rigging Grip": [42.48, 42.73, 45.12, 47.42, 49.44],
-    "Second Rigging Grip": [38.86, 39.10, 41.29, 43.39, 45.23],
-    "Rigging Grip": [36.12, 36.35, 38.39, 40.34, 42.05]
+  "Syndicated & Cable TV Series (3rd Season)": {
+    "Head Lighting Technician (incl. Lighting Board Operator)": [45.35, 47.16, 48.81, 50.27],
+    "Head Rigging Lighting Technician": [45.35, 47.16, 48.81, 50.27],
+    "Second Lighting Technician": [38.57, 40.11, 41.51, 42.76],
+    "Second Rigging Lighting Technician": [38.57, 40.11, 41.51, 42.76],
+    "Lighting Technician": [32.18, 33.47, 34.64, 35.68],
+    "Rigging Lighting Technician": [32.18, 33.47, 34.64, 35.68],
+    "Key Grip": [45.35, 47.16, 48.81, 50.27],
+    "Key Rigging Grip": [45.35, 47.16, 48.81, 50.27],
+    "Assistant Key Grip (Best Boy)": [38.57, 40.11, 41.51, 42.76],
+    "Grip": [32.18, 33.47, 34.64, 35.68],
+    "Second Rigging Grip": [32.18, 33.47, 34.64, 35.68],
+    "Rigging Grip": [32.18, 33.47, 34.64, 35.68]
   }
 };
 
@@ -153,6 +140,7 @@ export const Icons = {
   Phone: () => <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
   MapPin: () => <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
   Link: () => <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
+  Backup: () => <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21v-5h5"/></svg>,
 };
 
 export const DEFAULT_DASH_SETTINGS: DashSettings = {
@@ -160,5 +148,6 @@ export const DEFAULT_DASH_SETTINGS: DashSettings = {
   actualHrs: true, payableHrs: true, days: true, shows: true, pending: true,
   weeksWorked: true, avgPerWeek: true, avgPerMonth: true,
   weekGross: true, weekNet: true, weekHourlyGross: true, weekHourlyNet: true,
-  weekShows: true, weekPayableHrs: true, weekActualHrs: true
+  weekShows: true, weekPayableHrs: true, weekActualHrs: true,
+  dailyView: true
 };

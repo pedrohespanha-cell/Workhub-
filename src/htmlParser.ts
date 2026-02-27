@@ -45,8 +45,23 @@ export const parseHTMLText = (htmlString: string): Production[] => {
       const phoneMatch = text.match(/(\d{3}[-.\s]\d{3}[-.\s]\d{4})/);
       if (phoneMatch) phone = phoneMatch[0];
 
-      const addrMatch = text.match(/\d+\s+[A-Za-z0-9\s,]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Way|Drive|Dr|Lane|Ln|Court|Ct|Circle|Cir|Plaza|Plz|Square|Sq|Trail|Trl|Parkway|Pkwy|Mews|Crescent|Cres|Place|Pl|Gardens|Gdns|Row|Walk|Terrace|Ter|Close|Cl|Grove|Grv|View|Vw|Rise|Rse|Common|Cmn|Way|Wy|Gate|Gt|Link|Lnk|Loop|Lp|Path|Pth|Track|Trk|Trail|Trl|Highway|Hwy|Expressway|Expy|Freeway|Fwy|Turnpike|Tpk|Tollway|Tly|Bypass|Byp|Park|Pk|Avenue|Ave|Boulevard|Blvd|Circle|Cir|Court|Ct|Drive|Dr|Lane|Ln|Place|Pl|Road|Rd|Square|Sq|Street|St|Terrace|Ter|Way|Wy|Crescent|Cres|Mews|Row|Walk|Close|Cl|Grove|Grv|View|Vw|Rise|Rse|Common|Cmn|Gate|Gt|Link|Lnk|Loop|Lp|Path|Pth|Track|Trk|Trail|Trl|Highway|Hwy|Expressway|Expy|Freeway|Fwy|Turnpike|Tpk|Tollway|Tly|Bypass|Byp|Park|Pk)\.?\s*,?\s*[A-Za-z\s,]+,\s*[A-Z]{2}\s+[A-Z0-9\s]+/i);
-      if (addrMatch) address = addrMatch[0].trim();
+      // Robust address regex looking for typical Canadian/US formats
+      const addrMatch = text.match(/\d+\s+[A-Za-z0-9\s.,]+,\s*[A-Za-z\s.,]+,\s*[A-Z]{2}\s+[A-Z0-9\s-]{3,7}/i);
+      if (addrMatch) {
+        address = addrMatch[0].trim();
+      } else {
+        // Fallback: look for postal code and backtrack
+        const postalMatch = text.match(/([A-Z]\d[A-Z]\s?\d[A-Z]\d)/i);
+        if (postalMatch && postalMatch.index) {
+          const beforePostal = text.substring(0, postalMatch.index);
+          const lines = beforePostal.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+          if (lines.length > 0) {
+            // Try to grab the last 2-3 lines before the postal code
+            const addrLines = lines.slice(Math.max(0, lines.length - 3)).join(', ');
+            address = `${addrLines}, ${postalMatch[0]}`;
+          }
+        }
+      }
     }
 
     const emailEl = item.querySelector('p[style*="color:green"]') as HTMLElement;
@@ -98,12 +113,14 @@ export const parseHTMLText = (htmlString: string): Production[] => {
   });
 
   // Parse Rumoured Productions
-  const rumouredHeaders = Array.from(doc.querySelectorAll('p, u, strong')).filter(el => el.textContent?.includes('UPCOMING / RUMOURED PRODUCTIONS'));
-  if (rumouredHeaders.length > 0) {
-    let curr = rumouredHeaders[0].closest('p')?.nextElementSibling;
-    while (curr && curr.tagName === 'P') {
-      const text = (curr as HTMLElement).innerText.trim();
-      if (text && !text.includes('---')) {
+  const allElements = Array.from(doc.querySelectorAll('*'));
+  const rumouredHeader = allElements.find(el => el.textContent?.includes('UPCOMING / RUMOURED PRODUCTIONS') && el.children.length === 0);
+  
+  if (rumouredHeader) {
+    let curr = rumouredHeader.nextElementSibling || rumouredHeader.parentElement?.nextElementSibling;
+    while (curr) {
+      const text = (curr as HTMLElement).innerText?.trim() || '';
+      if (text && !text.includes('---') && text.length > 5) {
         const splitIdx = text.lastIndexOf(' - ');
         const name = splitIdx > -1 ? text.substring(0, splitIdx).trim() : text;
         const dates = splitIdx > -1 ? text.substring(splitIdx + 3).trim() : 'TBA';
@@ -116,6 +133,10 @@ export const parseHTMLText = (htmlString: string): Production[] => {
           crew: {}, 
           dates, 
           tier: 'Rumoured', 
+          address: '',
+          phone: '',
+          contractLink: '',
+          callSheetLink: '',
           status: 'Rumoured' 
         });
       }

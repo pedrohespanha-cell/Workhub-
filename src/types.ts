@@ -56,10 +56,11 @@ export interface DashSettings {
   weekShows: boolean;
   weekPayableHrs: boolean;
   weekActualHrs: boolean;
+  dailyView: boolean;
 }
 
 export interface ProdSettings {
   role1: string;
   role2: string;
-  showRates: boolean;
+  additionalRoles: string[];
 }
